@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.IO;
+using System;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -23,7 +25,7 @@ namespace Színházjegy
             InitializeComponent();
         }
 
-        private void btnVásárlás_Click(object sender, RoutedEventArgs e)
+        private void btnVasarlas_Click(object sender, RoutedEventArgs e)
         {
             string nev = txtNev.Text.Trim();
             string email = txtEmail.Text.Trim();
@@ -46,10 +48,48 @@ namespace Színházjegy
 
             MessageBox.Show($"Kedves {nev}!\n\nAz Ön által választott előadás: {eloadas}\nJegyek száma: {jegyekSzama}\nFizetendő összeg: {osszeg} Ft\n\nKöszönjük a vásárlást!", "Vásárlás sikeres", MessageBoxButton.OK, MessageBoxImage.Information);
 
+            try
+            {
+                string sor = $"{nev};{email};{eloadas};{jegyekSzama};{osszeg}";
+                File.AppendAllText(filePath, sor + Environment.NewLine, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hiba történt a fájl mentése közben:\n{ex.Message}", "Fájl hiba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
             txtNev.Clear();
             txtEmail.Clear();
             txtJegyekSzama.Clear();
             cmbEloadas.SelectedIndex = 0;
         }
+
+        private void Betoltes()
+        {
+            lstVasarlasok.Items.Clear();
+            if (!File.Exists(filePath))
+                return;
+            var lines = File.ReadAllLines(filePath, Encoding.UTF8);
+            foreach (var line in lines)
+            {
+                var parts = line.Split(';');
+                if (parts.Length == 5)
+                {
+                    string nev = parts[0];
+                    string email = parts[1];
+                    string eloadas = parts[2];
+                    string jegyekSzama = parts[3];
+                    string osszeg = parts[4];
+                    lstVasarlasok.Items.Add($"{nev} | {email} | {eloadas} | {jegyekSzama} db | {osszeg} Ft");
+                }
+            }
+        }
+
+        private void btnBetoltes_Click(object sender, RoutedEventArgs e)
+        {
+            Betoltes();
+            MessageBox.Show("Vásárlások sikeresen betöltve!", "Betöltés", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
     }
 }
